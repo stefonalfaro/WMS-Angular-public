@@ -1,0 +1,109 @@
+<div class="row">
+    <div class="col-md-5" *ngIf="WarehouseAdmin">
+        <a style="font-size:small;" class="btn btn-sm btn-success mr-1" href="/PlaceOrder/{{wid}}" role="button">Place Order</a>
+        <button type="button" style="font-size:x-small;" class="btn btn-sm btn-success mr-1">Upload (.CSV) to Place Order</button>
+        <button type="button" (click)="exportToCSV(OrdersList)" style="font-size:x-small;" class="btn btn-sm btn-success mr-1">Export to (.CSV)</button>
+        <button type="button" style="font-size:x-small;" class="btn btn-sm btn-danger mr-1">Delete All</button>
+
+        <button *ngIf="wid==4080" (click)="SendTomyBatch()" style="font-size:small;" type="button" class="btn btn-sm btn-info mr-1">Send TOMY Batch ({{TomyBatchCount}})</button>
+    </div>
+    <div class="col-md-1">
+        <input style="font-size:x-small;" matInput [matDatepicker]="picker2" class="form-control" [(ngModel)]="FromDate" placeholder="From Date">
+        <mat-datepicker-toggle matSuffix [for]="picker2"><mat-datepicker #picker2></mat-datepicker></mat-datepicker-toggle>
+    </div>
+    <div class="col-md-1">
+        <input style="font-size:x-small;" matInput [matDatepicker]="picker3" class="form-control" [(ngModel)]="ToDate" placeholder="To Date">
+        <mat-datepicker-toggle matSuffix [for]="picker3"><mat-datepicker #picker3></mat-datepicker></mat-datepicker-toggle>
+    </div>
+    <div class="col-md-2">
+        <button style="font-size:x-small;" (click)="searchByDate()" type="button" class="btn btn-sm btn-secondary mr-1">Order</button>
+        <button style="font-size:x-small;" (click)="searchByDateRequested()" type="button" class="btn btn-sm btn-secondary mr-1">Requested</button>
+    </div>
+    <div class="col-md-3">
+        <input type="text" [(ngModel)]="SearchQuery" (keyup.enter)="setSearchQuery(SearchQuery)"/>
+        <button style="font-size:x-small;" (click)="setSearchQuery(SearchQuery)" type="button" class="btn btn-sm btn-secondary mr-1">Search</button>
+        <button style="font-size:x-small;" (click)="clearSearch()" type="button" class="btn btn-sm btn-secondary mr-1">Clear</button>
+    </div>
+</div>
+
+<ng-template #content let-modal>
+    <div class="modal-header">
+        <h4 class="modal-title" id="modal-basic-title">{{ModalTitle}}</h4>
+        <button type="button" class="close" aria-label="Close" (click)="closeClick(content)">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    <div class="modal-body">
+        <app-place-order [Order]="Order" *ngIf="ActivateAddEditOrderComp"></app-place-order>
+    </div>
+</ng-template>
+
+<!--
+<div class="row">
+    <div class="col-md-12">
+        <b>Results:</b>{{ListSize}}, <b>PageSize:</b>{{PageSize}}, <b>Pages:</b><span *ngFor='let in of counter(Pages);let i = index'>[{{i+1}}]</span>
+    </div>  
+</div>
+-->
+
+<ejs-grid [dataSource]='OrdersList' [allowPaging]="true" [allowFiltering]="true" [pageSettings]='pageSettings'>
+    <e-columns >
+        <e-column field='id' headerText='Order' width=75 style="margin:0px; padding:0px;">
+            <ng-template #template let-data style="margin:0px; padding:0x;">
+                <b>ID: </b> <a href="/Orders/{{wid}}/{{data.id}}"><B>{{data.id}}</B></a><br />
+                <small><b>Order: </b></small>{{data.OrderDate | date:'dd/MM/yyyy'}}<br />
+                <div *ngIf="(data.RequestedShipDate | date:'dd/MM/yyyy') != '01/01/1900'"><small><b>Req: </b></small>{{data.RequestedShipDate | date:'dd/MM/yyyy'}}</div>
+            </ng-template>
+        </e-column>
+        <e-column field='DepositorOrderNumber' width=75 style="margin:0px; padding:0px;">
+            <ng-template #template let-data style="margin:0px; padding:0x;">
+                <b>CustPO: </b>{{data.CustomerPONumber}}<br/>
+                <b>DepId: </b>{{data.DepositorOrderNumber}}
+            </ng-template>
+        </e-column>
+        <e-column field='Reference1' width=75 style="margin:0px; padding:0px;">
+            <ng-template #template let-data style="margin:0px; padding:0x;">
+                <b>Ref1: </b>{{data.Reference1}}<br />
+                <b>Ref2: </b>{{data.Reference2}}<br />
+                <b>Track: </b><small>{{data.CarrierTrackingNumber}}</small>
+            </ng-template>
+        </e-column>
+        <e-column field='Status'  width=50 style="margin:0px; padding:0px;">
+            <ng-template #template let-data style="margin:0px; padding:0x;">
+                <b [ngStyle]="{'backgroundColor': data.Status == 'SHIPPED' ? 'lightgreen' : data.Status == 'IN PROGRESS' ? 'lightyellow' : 'white' }">{{data.Status}}</b>
+            </ng-template>
+        </e-column>
+        <e-column field='CarrierName' width=75 style="margin:0px; padding:0px;">
+            <ng-template #template let-data style="margin:0px; padding:0x;">
+                <b>Customer: </b>{{data.CustomerName}} {{data.Partner}}<br/>
+                <b>Carrier: </b><a href="/Orders/{{wid}}/{{data.id}}/Carrier">{{data.CarrierName}}</a>
+            </ng-template>
+        </e-column>
+        <e-column field='ShipToName' headerText='Ship To Information' width=100 style="margin:0px; padding:0px;">
+            <ng-template #template let-data style="margin:0px; padding:0x;">
+                <b>{{data.ShipToName}}</b><br/>
+                <small>{{data.ShipToAddress1}}, {{data.ShipToCity}}, {{data.ShipToState}} {{data.ShipToZip}} {{data.ShipToCountry}}</small>
+            </ng-template>
+        </e-column>
+        <e-column headerText='Contents' width=50>
+            <ng-template #template let-data style="margin:0px; padding:0x;">
+                <table class="tablemini" style="margin:0px;padding:0px;">
+                    <tr style="margin:0px; padding:0px"><td><b>Items: </b></td><td><a href="/Orders/{{wid}}/{{data.id}}/Items">{{data.TotalItems}}</a></td></tr>
+                    <tr style="margin:0px; padding:0px"><td><b>Alloc: </b></td><td><a href="/Orders/{{wid}}/{{data.id}}/Allocations">{{data.TotalAllocations}}</a></td></tr>
+                    <tr style="margin:0px; padding:0px"><td><b>P</b><a href="/Orders/{{wid}}/{{data.id}}/Packing">{{data.TotalPackages}}</a><b>  I</b><a href="/Orders/{{wid}}/{{data.id}}/Packing">{{data.TotalInners}}</a></td></tr>
+                </table>
+            </ng-template>
+        </e-column>
+        <e-column width=50 style="margin:0px; padding:0px;">
+            <ng-template #template let-data style="margin:0px; padding:0x;">
+                {{data.Weight}} ({{data.WeightUnitofMeasure}})
+            </ng-template>
+        </e-column>
+        <e-column headerText='Functions' width=75 style="margin:0px; padding:0px;">
+            <ng-template #template let-data style="margin:0px; padding:0x;">
+                <button type="button" class="btn btn-sm btn-info mr-1" (click)="exportToTLS(data)">TLS ({{data.ExportedToTLS}})</button>            
+                <button type="button" class="btn btn-sm btn-danger mr-1" (click)="deleteClick(data)">X</button>
+            </ng-template>
+        </e-column>
+    </e-columns>
+</ejs-grid>
